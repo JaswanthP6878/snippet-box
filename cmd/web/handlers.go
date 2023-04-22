@@ -3,13 +3,12 @@ package main
 import (
 	"fmt"
 	"html/template"
-	"log"
 	"net/http"
 	"strconv"
 )
 
 // home is a handler function
-func home(w http.ResponseWriter, r *http.Request) {
+func (app *application) home(w http.ResponseWriter, r *http.Request) {
 	// if we want to show 404 error for undefined paths, we can add this condition to the catch all case.
 
 	if r.URL.Path != "/" {
@@ -28,7 +27,7 @@ func home(w http.ResponseWriter, r *http.Request) {
 	// execution
 	ts, err := template.ParseFiles(files...)
 	if err != nil {
-		log.Println(err.Error())
+		app.errorLog.Println(err.Error())
 		http.Error(w, "internal Server Error", 500)
 		return
 	}
@@ -36,18 +35,18 @@ func home(w http.ResponseWriter, r *http.Request) {
 	// into the response body
 	err = ts.ExecuteTemplate(w, "base", nil)
 	if err != nil {
-		log.Println(err.Error())
+		app.errorLog.Println(err.Error())
 		http.Error(w, "Internsal Server Error", 500)
 	}
 
 }
 
 // snippetView is a handler function
-func snippetView(w http.ResponseWriter, r *http.Request) {
+func (app *application) snippetView(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte("Display specific snippet...."))
 }
 
-func snippetCreate(w http.ResponseWriter, r *http.Request) {
+func (app *application) snippetCreate(w http.ResponseWriter, r *http.Request) {
 
 	if r.Method != "POST" {
 		w.Header().Set("Allow", "Only POST")
