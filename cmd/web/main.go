@@ -1,10 +1,13 @@
 package main
 
 import (
+	"database/sql"
 	"flag"
 	"log"
 	"net/http"
 	"os"
+
+	_ "github.com/go-sql-driver/mysql"
 )
 
 type application struct {
@@ -16,6 +19,8 @@ func main() {
 	// declaring a flag variable, with default value ":4000" and
 	// flag name as "addr" and a message
 	addr := flag.String("addr", ":4000", "Defining the port address")
+	// dsn is a string to identify the connection to mysql. it defines the data source.
+	dsn := flag.String("dsn", "bill:passpass@/snippetbox?parseTime=true", "MYSQL data source name")
 
 	// used to pasrse the command line value and get flags and assign
 	// them to declared flags.
@@ -28,16 +33,14 @@ func main() {
 		errorLog: errorLog,
 		infoLog:  infoLog,
 	}
+	db, err := OpenDB(*dsn)
+	if err != nil {
+		errorLog.Fatal(err)
+	}
 
-	mux := http.NewServeMux()
-
-	fileServer := http.FileServer(http.Dir("./ui/static"))
-	// we strip the /static before we reach the file handler becauase
-	// if we keep it then it searches in ./ui/static/static which in not present
-	mux.Handle("/static/", http.StripPrefix("/static", fileServer))
-	mux.HandleFunc("/", app.home)
-	mux.HandleFunc("/snippet/view", app.snippetView)
-	mux.HandleFunc("/snippet/create", app.snippetCreate)
+	// closes the connection pool when graceful termination happens
+	defer db.Close()
+	mux := app.routes()
 
 	sv := &http.Server{
 		Addr:     *addr,
@@ -46,6 +49,18 @@ func main() {
 	}
 
 	infoLog.Printf("Starting server on %s", *addr)
-	err := sv.ListenAndServe()
+	err = sv.ListenAndServe()
 	errorLog.Fatal(err)
+}
+
+// function to open connetion pool for Mysql database for a given dsn
+func OpenDB(dns string) (*sql.DB, error) {
+	db, err := sql.Open("mysql", dns)
+	if err != nil {
+		return nil, err
+	}
+	if err = db.Ping(); err != nil {
+		return nil, err
+	}
+	return db, err
 }

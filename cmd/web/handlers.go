@@ -12,7 +12,7 @@ func (app *application) home(w http.ResponseWriter, r *http.Request) {
 	// if we want to show 404 error for undefined paths, we can add this condition to the catch all case.
 
 	if r.URL.Path != "/" {
-		http.NotFound(w, r)
+		app.notFound(w)
 		return
 	}
 
@@ -27,16 +27,18 @@ func (app *application) home(w http.ResponseWriter, r *http.Request) {
 	// execution
 	ts, err := template.ParseFiles(files...)
 	if err != nil {
-		app.errorLog.Println(err.Error())
-		http.Error(w, "internal Server Error", 500)
+		// app.errorLog.Println(err.Error())
+		// http.Error(w, "internal Server Error", 500)
+		app.serverError(w, err)
 		return
 	}
 	// execution of the template set allows us to write the template
 	// into the response body
 	err = ts.ExecuteTemplate(w, "base", nil)
 	if err != nil {
-		app.errorLog.Println(err.Error())
-		http.Error(w, "Internsal Server Error", 500)
+		// app.errorLog.Println(err.Error())
+		// http.Error(w, "Internsal Server Error", 500)
+		app.serverError(w, err)
 	}
 
 }
@@ -50,12 +52,12 @@ func (app *application) snippetCreate(w http.ResponseWriter, r *http.Request) {
 
 	if r.Method != "POST" {
 		w.Header().Set("Allow", "Only POST")
-		http.Error(w, "Method not Allowed", 405)
+		app.clientError(w, http.StatusMethodNotAllowed)
 		return
 	}
 	id, err := strconv.Atoi(r.URL.Query().Get("id"))
 	if err != nil || id < 0 {
-		http.NotFound(w, r)
+		app.notFound(w)
 		return
 	}
 	fmt.Fprintf(w, "Display a specific snippet id: %d", id)
