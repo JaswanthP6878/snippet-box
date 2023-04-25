@@ -1,9 +1,14 @@
 package main
 
 import (
+	"errors"
 	"fmt"
-	"html/template"
+
+	//"html/template"
 	"net/http"
+	"strconv"
+
+	"snippetbox.jaswanthp.com/internal/models"
 )
 
 // home is a handler function
@@ -15,36 +20,58 @@ func (app *application) home(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	files := []string{
-		"./ui/html/base.tmpl.html",
-		"./ui/html/partials/nav.tmpl.html",
-		"./ui/html/pages/home.tmpl.html",
+	snippets, err := app.snippets.Latest()
+	if err != nil {
+		app.serverError(w, err)
 	}
+	for _, snippet := range snippets {
+		fmt.Fprintf(w, "%+v\n", snippet)
+	}
+
+	// files := []string{
+	// 	"./ui/html/base.tmpl.html",
+	// 	"./ui/html/partials/nav.tmpl.html",
+	// 	"./ui/html/pages/home.tmpl.html",
+	// }
 
 	// used to read the template file into a template set
 	// ParseFiles accepts variadic parametes, here files are unrolled in the function
 	// execution
-	ts, err := template.ParseFiles(files...)
-	if err != nil {
-		// app.errorLog.Println(err.Error())
-		// http.Error(w, "internal Server Error", 500)
-		app.serverError(w, err)
-		return
-	}
+	// ts, err := template.ParseFiles(files...)
+	// if err != nil {
+	// 	// app.errorLog.Println(err.Error())
+	// 	// http.Error(w, "internal Server Error", 500)
+	// 	app.serverError(w, err)
+	// 	return
+	// }
 	// execution of the template set allows us to write the template
 	// into the response body
-	err = ts.ExecuteTemplate(w, "base", nil)
-	if err != nil {
-		// app.errorLog.Println(err.Error())
-		// http.Error(w, "Internsal Server Error", 500)
-		app.serverError(w, err)
-	}
+	// err = ts.ExecuteTemplate(w, "base", nil)
+	// if err != nil {
+	// 	// app.errorLog.Println(err.Error())
+	// 	// http.Error(w, "Internsal Server Error", 500)
+	// 	app.serverError(w, err)
+	// }
 
 }
 
 // snippetView is a handler function
 func (app *application) snippetView(w http.ResponseWriter, r *http.Request) {
-	w.Write([]byte("Display specific snippet...."))
+	id, err := strconv.Atoi(r.URL.Query().Get("id"))
+	if err != nil || id < 1 {
+		app.notFound(w)
+		return
+	}
+	snippet, err := app.snippets.Get(id)
+	if err != nil {
+		if errors.Is(err, models.ErrNoRecord) {
+			app.notFound(w)
+		} else {
+			app.serverError(w, err)
+		}
+		return
+	}
+	fmt.Fprintf(w, "%+v", snippet)
 }
 
 func (app *application) snippetCreate(w http.ResponseWriter, r *http.Request) {
