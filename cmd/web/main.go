@@ -7,12 +7,15 @@ import (
 	"net/http"
 	"os"
 
+	"snippetbox.jaswanthp.com/internal/models"
+
 	_ "github.com/go-sql-driver/mysql"
 )
 
 type application struct {
 	errorLog *log.Logger
 	infoLog  *log.Logger
+	snippets *models.SnippetModel
 }
 
 func main() {
@@ -29,13 +32,15 @@ func main() {
 	infoLog := log.New(os.Stdout, "INFO:\t", log.Ldate|log.Ltime)
 	errorLog := log.New(os.Stderr, "Error:\t", log.Ldate|log.Ltime|log.Lshortfile)
 
-	app := &application{
-		errorLog: errorLog,
-		infoLog:  infoLog,
-	}
 	db, err := OpenDB(*dsn)
 	if err != nil {
 		errorLog.Fatal(err)
+	}
+
+	app := &application{
+		errorLog: errorLog,
+		infoLog:  infoLog,
+		snippets: &models.SnippetModel{DB: db},
 	}
 
 	// closes the connection pool when graceful termination happens

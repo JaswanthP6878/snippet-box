@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"html/template"
 	"net/http"
-	"strconv"
 )
 
 // home is a handler function
@@ -55,10 +54,14 @@ func (app *application) snippetCreate(w http.ResponseWriter, r *http.Request) {
 		app.clientError(w, http.StatusMethodNotAllowed)
 		return
 	}
-	id, err := strconv.Atoi(r.URL.Query().Get("id"))
-	if err != nil || id < 0 {
-		app.notFound(w)
+	title := "O snail"
+	content := "this is a snail\nthis is what we do\ndo do be do\n"
+	expires := 7
+
+	id, err := app.snippets.Insert(title, content, expires)
+	if err != nil {
+		app.serverError(w, err)
 		return
 	}
-	fmt.Fprintf(w, "Display a specific snippet id: %d", id)
+	http.Redirect(w, r, fmt.Sprintf("/snippet/view?id=%d", id), http.StatusSeeOther)
 }
