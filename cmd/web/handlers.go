@@ -3,7 +3,6 @@ package main
 import (
 	"errors"
 	"fmt"
-	"html/template"
 	"net/http"
 	"strconv"
 
@@ -23,34 +22,8 @@ func (app *application) home(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		app.serverError(w, err)
 	}
-	for _, snippet := range snippets {
-		fmt.Fprintf(w, "%+v\n", snippet)
-	}
 
-	// files := []string{
-	// 	"./ui/html/base.tmpl.html",
-	// 	"./ui/html/partials/nav.tmpl.html",
-	// 	"./ui/html/pages/home.tmpl.html",
-	// }
-
-	// used to read the template file into a template set
-	// ParseFiles accepts variadic parametes, here files are unrolled in the function
-	// execution
-	// ts, err := template.ParseFiles(files...)
-	// if err != nil {
-	// 	// app.errorLog.Println(err.Error())
-	// 	// http.Error(w, "internal Server Error", 500)
-	// 	app.serverError(w, err)
-	// 	return
-	// }
-	// execution of the template set allows us to write the template
-	// into the response body
-	// err = ts.ExecuteTemplate(w, "base", nil)
-	// if err != nil {
-	// 	// app.errorLog.Println(err.Error())
-	// 	// http.Error(w, "Internsal Server Error", 500)
-	// 	app.serverError(w, err)
-	// }
+	app.render(w, http.StatusOK, "home.tmpl.html", &templateData{Snippets: snippets})
 
 }
 
@@ -70,30 +43,8 @@ func (app *application) snippetView(w http.ResponseWriter, r *http.Request) {
 		}
 		return
 	}
-	// Initialize a slice of files which form a template set:
-	files := []string{
-		"./ui/html/base.tmpl.html",
-		"./ui/html/partials/nav.tmpl.html",
-		"./ui/html/pages/view.tmpl.html",
-	}
+	app.render(w, http.StatusOK, "view.tmpl.html", &templateData{Snippet: snippet})
 
-	ts, err := template.ParseFiles(files...)
-	if err != nil {
-		app.serverError(w, err)
-		return
-	}
-
-	data := &templateData{
-		Snippet: snippet,
-	}
-
-	// renders the template and writes it to w, with
-	// dynamic data being passed as the snippet
-	err = ts.ExecuteTemplate(w, "base", data)
-	if err != nil {
-		app.serverError(w, err)
-		return
-	}
 }
 
 func (app *application) snippetCreate(w http.ResponseWriter, r *http.Request) {
