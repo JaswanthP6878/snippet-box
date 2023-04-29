@@ -3,19 +3,33 @@ package main
 import (
 	"net/http"
 
+	"github.com/julienschmidt/httprouter"
 	"github.com/justinas/alice"
 )
 
 func (app *application) routes() http.Handler {
-	mux := http.NewServeMux()
+
+	router := httprouter.New()
 	fileServer := http.FileServer(http.Dir("./ui/static"))
 	// we strip the /static before we reach the file handler becauase
 	// if we keep it then it searches in ./ui/static/static which in not present
-	mux.Handle("/static/", http.StripPrefix("/static", fileServer))
-	mux.HandleFunc("/", app.home)
-	mux.HandleFunc("/snippet/view", app.snippetView)
-	mux.HandleFunc("/snippet/create", app.snippetCreate)
+
+	// notfound errors are all served here
+	router.NotFound = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		app.notFound(w)
+	})
+
+	router.Handler(http.MethodGet, "/static/", http.StripPrefix("/static", fileServer))
+
+	router.HandlerFunc(http.MethodGet, "/", app.home)
+
+	router.HandlerFunc(http.MethodGet, "/snippet/view/:id", app.snippetView)
+
+	router.HandlerFunc(http.MethodGet, "/snippet/create", app.snippetCreate)
+
+	router.HandlerFunc(http.MethodPost, "/snippet/create", app.snippetCreatePost)
+
 	// standard creates a chain of middlewares
 	standard := alice.New(app.recoverPanic, app.logging, secureHeaders)
-	return standard.Then(mux)
+	return standard.Then(router)
 }
