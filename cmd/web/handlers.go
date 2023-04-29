@@ -6,9 +6,8 @@ import (
 	"net/http"
 	"strconv"
 
-	"snippetbox.jaswanthp.com/internal/models"
-
 	"github.com/julienschmidt/httprouter"
+	"snippetbox.jaswanthp.com/internal/models"
 )
 
 // home is a handler function
@@ -69,7 +68,6 @@ func (app *application) snippetCreatePost(w http.ResponseWriter, r *http.Request
 		app.clientError(w, http.StatusBadRequest)
 		return
 	}
-
 	id, err := app.snippets.Insert(title, content, expires)
 	if err != nil {
 		app.serverError(w, err)

@@ -11,14 +11,14 @@ func (app *application) routes() http.Handler {
 
 	router := httprouter.New()
 	fileServer := http.FileServer(http.Dir("./ui/static"))
+
+	router.NotFound = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		app.notFound(w)
+	})
 	// we strip the /static before we reach the file handler becauase
 	// if we keep it then it searches in ./ui/static/static which in not present
 
 	// notfound errors are all served here
-	router.NotFound = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		app.notFound(w)
-	})
-
 	router.Handler(http.MethodGet, "/static/", http.StripPrefix("/static", fileServer))
 
 	router.HandlerFunc(http.MethodGet, "/", app.home)
@@ -30,6 +30,6 @@ func (app *application) routes() http.Handler {
 	router.HandlerFunc(http.MethodPost, "/snippet/create", app.snippetCreatePost)
 
 	// standard creates a chain of middlewares
-	standard := alice.New(app.recoverPanic, app.logging, secureHeaders)
+	standard := alice.New(app.recoverPanic, app.logging)
 	return standard.Then(router)
 }
