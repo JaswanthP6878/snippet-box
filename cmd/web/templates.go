@@ -51,3 +51,18 @@ func newTemplateCache() (map[string]*template.Template, error) {
 	return cache, nil
 
 }
+
+// func myMiddleware(next http.Handler) http.Handler {
+// 	fn := func(w http.ResponseWriter, r *http.Request) {
+// 		// middleware logic
+// 		next.ServeHTTP(w, r)
+// 	}
+// 	return http.HandlerFunc(fn)
+// }
+
+// func myShortMiddleware(next http.Handler) http.Handler {
+// 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+// 		// middlware logic
+// 		next.ServeHTTP(w, r)
+// 	})
+// }
