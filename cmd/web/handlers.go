@@ -74,12 +74,11 @@ func (app *application) snippetCreatePost(w http.ResponseWriter, r *http.Request
 	}
 
 	var form snippetCreateForm
-	err = app.formDecoder.Decode(&form, r.PostForm)
+	err = app.decodePostForm(r, &form)
 	if err != nil {
 		app.clientError(w, http.StatusBadRequest)
 		return
 	}
-
 	form.CheckField(validator.NotBlank(form.Title), "title", "This Field cannot be blank")
 	form.CheckField(validator.MaxChars(form.Title, 100), "title", "This field cannot be bigger than 100 characters long")
 	form.CheckField(validator.NotBlank(form.Content), "content", "This field cannot be blank")
