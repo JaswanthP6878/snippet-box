@@ -16,19 +16,22 @@ func (app *application) routes() http.Handler {
 	// if we keep it then it searches in ./ui/static/static which in not present
 
 	// notfound errors are all served here
+
 	router.Handler(http.MethodGet, "/static/*filepath", http.StripPrefix("/static", fileServer))
 
 	router.NotFound = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		app.notFound(w)
 	})
 
-	router.HandlerFunc(http.MethodGet, "/", app.home)
+	dynamic := alice.New(app.sessionManager.LoadAndSave)
 
-	router.HandlerFunc(http.MethodGet, "/snippet/view/:id", app.snippetView)
+	router.Handler(http.MethodGet, "/", dynamic.ThenFunc(app.home))
 
-	router.HandlerFunc(http.MethodGet, "/snippet/create", app.snippetCreate)
+	router.Handler(http.MethodGet, "/snippet/view/:id", dynamic.ThenFunc(app.snippetView))
 
-	router.HandlerFunc(http.MethodPost, "/snippet/create", app.snippetCreatePost)
+	router.Handler(http.MethodGet, "/snippet/create", dynamic.ThenFunc(app.snippetCreate))
+
+	router.Handler(http.MethodPost, "/snippet/create", dynamic.ThenFunc(app.snippetCreatePost))
 
 	// standard creates a chain of middlewares
 	standard := alice.New(app.recoverPanic, app.logging, secureHeaders)
