@@ -29,10 +29,6 @@ func (app *application) routes() http.Handler {
 
 	router.Handler(http.MethodGet, "/snippet/view/:id", dynamic.ThenFunc(app.snippetView))
 
-	router.Handler(http.MethodGet, "/snippet/create", dynamic.ThenFunc(app.snippetCreate))
-
-	router.Handler(http.MethodPost, "/snippet/create", dynamic.ThenFunc(app.snippetCreatePost))
-
 	router.Handler(http.MethodGet, "/user/signup", dynamic.ThenFunc(app.userSignUp))
 
 	router.Handler(http.MethodPost, "/user/signup", dynamic.ThenFunc(app.userSignUpPost))
@@ -41,7 +37,15 @@ func (app *application) routes() http.Handler {
 
 	router.Handler(http.MethodPost, "/user/login", dynamic.ThenFunc(app.userLoginPost))
 
-	router.Handler(http.MethodPost, "/user/logout", dynamic.ThenFunc(app.userLogoutPost))
+	// protected routes for auth
+
+	protected := dynamic.Append(app.requireAuthentication)
+
+	router.Handler(http.MethodPost, "/user/logout", protected.ThenFunc(app.userLogoutPost))
+
+	router.Handler(http.MethodGet, "/snippet/create", protected.ThenFunc(app.snippetCreate))
+
+	router.Handler(http.MethodPost, "/snippet/create", protected.ThenFunc(app.snippetCreatePost))
 
 	// standard creates a chain of middlewares
 	standard := alice.New(app.recoverPanic, app.logging, secureHeaders)
