@@ -175,20 +175,21 @@ func (app *application) userLogin(w http.ResponseWriter, r *http.Request) {
 }
 
 func (app *application) userLoginPost(w http.ResponseWriter, r *http.Request) {
-	var form userLoginForm
 
+	var form userLoginForm
 	err := app.decodePostForm(r, &form)
 	if err != nil {
 		app.clientError(w, http.StatusBadRequest)
 		return
 	}
 
-	// form validation checks
+	// form validation checks on login details
 	form.CheckField(validator.NotBlank(form.Email), "email", "This field cannot be blank")
 	form.CheckField(validator.Matches(form.Email, validator.EmailRX), "email", "This must be a valid email address")
 
 	form.CheckField(validator.NotBlank(form.Password), "password", "this field cannot be blank")
 
+	// if form is invalid, re-render the form
 	if !form.Valid() {
 		data := app.newTemplateData(r)
 		data.Form = form
@@ -196,6 +197,7 @@ func (app *application) userLoginPost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// authenticating users
 	id, err := app.users.Authenticate(form.Email, form.Password)
 	if err != nil {
 		if errors.Is(err, models.ErrInvalidCredentials) {
@@ -209,6 +211,8 @@ func (app *application) userLoginPost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// if a user is authenticated better to renew token
+	// a renewed token contains the previous data but is assigned a new sessionToken
 	err = app.sessionManager.RenewToken(r.Context())
 	if err != nil {
 		app.serverError(w, err)
@@ -216,7 +220,6 @@ func (app *application) userLoginPost(w http.ResponseWriter, r *http.Request) {
 	}
 
 	app.sessionManager.Put(r.Context(), "authenticatedUserID", id)
-
 	http.Redirect(w, r, "/snippet/create", http.StatusSeeOther)
 
 }
