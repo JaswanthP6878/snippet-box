@@ -2,10 +2,12 @@ package main
 
 import (
 	"html/template"
+	"io/fs"
 	"path/filepath"
 	"time"
 
 	"snippetbox.jaswanthp.com/internal/models"
+	"snippetbox.jaswanthp.com/ui"
 )
 
 type templateData struct {
@@ -19,7 +21,7 @@ type templateData struct {
 }
 
 func humanDate(t time.Time) string {
-	return t.Format("02 Jan 2006 at 15:05")
+	return t.UTC().Format("02 Jan 2006 at 15:04")
 }
 
 var functions = template.FuncMap{
@@ -29,25 +31,20 @@ var functions = template.FuncMap{
 func newTemplateCache() (map[string]*template.Template, error) {
 	cache := map[string]*template.Template{}
 
-	pages, err := filepath.Glob("./ui/html/pages/*.tmpl.html")
+	// pages, err := filepath.Glob("./ui/html/pages/*.tmpl.html")
+	pages, err := fs.Glob(ui.Files, "html/pages/*.tmpl.html")
 	if err != nil {
 		return nil, err
 	}
 	for _, page := range pages {
 		// base retrives the file name (everything after the last "/" i.e home.tmpl.html)
 		name := filepath.Base(page)
-		// add the parsed base template to template set
-		ts, err := template.New(name).Funcs(functions).ParseFiles("./ui/html/base.tmpl.html")
-		if err != nil {
-			return nil, err
+		patterns := []string{
+			"html/base.tmpl.html",
+			"html/partials/*.tmpl.html",
+			page,
 		}
-		// adding all the parsed partials to the template set
-		ts, err = ts.ParseGlob("./ui/html/partials/*.tmpl.html")
-		if err != nil {
-			return nil, err
-		}
-		// adding the main parsed page template
-		ts, err = ts.ParseFiles(page)
+		ts, err := template.New(name).Funcs(functions).ParseFS(ui.Files, patterns...)
 		if err != nil {
 			return nil, err
 		}

@@ -5,19 +5,21 @@ import (
 
 	"github.com/julienschmidt/httprouter"
 	"github.com/justinas/alice"
+	"snippetbox.jaswanthp.com/ui"
 )
 
 func (app *application) routes() http.Handler {
 
 	router := httprouter.New()
-	fileServer := http.FileServer(http.Dir("./ui/static"))
+	// fileServer := http.FileServer(http.Dir("./ui/static"))
+	fileServer := http.FileServer(http.FS(ui.Files))
 
 	// we strip the /static before we reach the file handler becauase
 	// if we keep it then it searches in ./ui/static/static which in not present
 
 	// notfound errors are all served here
 
-	router.Handler(http.MethodGet, "/static/*filepath", http.StripPrefix("/static", fileServer))
+	router.Handler(http.MethodGet, "/static/*filepath", fileServer)
 
 	router.NotFound = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		app.notFound(w)
